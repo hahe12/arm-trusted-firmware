@@ -7,7 +7,9 @@
 #ifndef SCMI_PRIVATE_H
 #define SCMI_PRIVATE_H
 
+#include <assert.h>
 #include <lib/mmio.h>
+#include <drivers/arm/css/scmi.h>
 
 /*
  * SCMI power domain management protocol message and response lengths. It is
@@ -73,6 +75,12 @@
 	(((_msg_id) & SCMI_MSG_ID_MASK) << SCMI_MSG_ID_SHIFT) |			\
 	(((_token) & SCMI_MSG_TOKEN_MASK) << SCMI_MSG_TOKEN_SHIFT))
 
+#define SCMI_MSG_GET_PROTO(_hdr)	\
+	(((_hdr) >> SCMI_MSG_PROTO_ID_SHIFT) & SCMI_MSG_PROTO_ID_MASK)
+
+#define SCMI_MSG_GET_MSG_ID(_hdr)	\
+	(((_hdr) >> SCMI_MSG_ID_SHIFT) & SCMI_MSG_ID_MASK)
+
 /* Helper macro to get the token from a SCMI message header */
 #define SCMI_MSG_GET_TOKEN(_msg)				\
 	(((_msg) >> SCMI_MSG_TOKEN_SHIFT) & SCMI_MSG_TOKEN_MASK)
@@ -91,6 +99,12 @@
 		assert(SCMI_IS_CHANNEL_FREE(status));			\
 		(status) &= ~(SCMI_CH_STATUS_FREE_MASK <<		\
 				SCMI_CH_STATUS_FREE_SHIFT);		\
+	} while (0)
+
+#define SCMI_MARK_CHANNEL_FREE(status) do {				\
+	assert(!SCMI_IS_CHANNEL_FREE(status));				\
+	(status) |= (SCMI_CH_STATUS_FREE_MASK <<			\
+		     SCMI_CH_STATUS_FREE_SHIFT);			\
 	} while (0)
 
 /* Helper macros to copy arguments to the mailbox payload */
@@ -140,6 +154,7 @@ typedef struct mailbox_mem {
 	uint32_t payload[];
 } mailbox_mem_t;
 
+#define SCMI_MAILBOX_MEM_SIZE	(128U)
 
 /* Private APIs for use within SCMI driver */
 void scmi_get_channel(scmi_channel_t *ch);

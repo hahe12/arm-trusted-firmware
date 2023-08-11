@@ -290,6 +290,7 @@ func cortex_a53_reset_func
 	ret	x19
 endfunc cortex_a53_reset_func
 
+	.globl cortex_a53_core_pwr_dwn
 func cortex_a53_core_pwr_dwn
 	mov	x18, x30
 

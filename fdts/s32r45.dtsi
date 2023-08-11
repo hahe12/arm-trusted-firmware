@@ -1,0 +1,377 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * Copyright 2017-2023 NXP
+ */
+#include <dt-bindings/clock/s32r45-clock.h>
+#include <dt-bindings/clock/s32r45-scmi-clock.h>
+#include <dt-bindings/ddr-errata/s32-ddr-errata.h>
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/nvmem/s32cc-siul2-nvmem.h>
+#include <dt-bindings/pinctrl/s32cc-pinfunc.h>
+#include <dt-bindings/memory/s32-siul2.h>
+
+#include "s32cc.dtsi"
+/ {
+	model = "NXP S32R458-EVB";
+	compatible = "nxp,s32r45";
+
+	aliases {
+		eth0 = &gmac0;
+		eth1 = &gmac1;
+	};
+
+	memory@80000000 {
+		device_type = "memory";
+		reg = <0 0x80000000 0 0x80000000>;
+	};
+
+	memory@880000000 {
+		device_type = "memory";
+		reg = <0x8 0x80000000 0 0x80000000>;
+	};
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ddr_errata_reserved: ddr@85000000 {
+			reg = <0x0 DDR_ERRATA_REGION_BASE
+				   0x0 DDR_ERRATA_REGION_SIZE>; /* 4 KB */
+			no-map;
+		};
+	};
+
+	signature {
+		key-boot_key {
+			required = "conf";
+			algo = "sha1,rsa2048";
+			key-name-hint = "boot_key";
+		};
+	};
+
+	clocks {
+		gmac1_ext_rx: gmac1_ext_rx {
+			compatible = "fixed-clock";
+			clock-frequency = <25000000>;
+			#clock-cells = <1>;
+		};
+
+		gmac1_ext_tx: gmac1_ext_tx {
+			compatible = "fixed-clock";
+			clock-frequency = <125000000>;
+			#clock-cells = <1>;
+		};
+
+		gmac1_ext_ref: gmac1_ext_ref {
+			compatible = "fixed-clock";
+			clock-frequency = <50000000>;
+			#clock-cells = <1>;
+		};
+	};
+
+	soc {
+		siul2@4009c000 {
+			compatible = "simple-mfd";
+			status = "okay";
+			u-boot,dm-pre-reloc;
+			#address-cells = <2>;
+			#size-cells = <2>;
+
+				 /* MIDR */
+			ranges = <MIDR_SIUL2_0 0 0x0 0x4009c000 0x0 0x10>,
+				 <MIDR_SIUL2_1 0 0x0 0x4403c000 0x0 0x10>,
+
+				 /* MSCR 0-101 */
+				 <MSCRS_SIUL2_0 0 0x0 0x4009c240 0x0 0x198>,
+				 /* MSCR 102-133 */
+				 <MSCRS_SIUL2_1 0 0x0 0x4403c3d8 0x0 0x80>,
+
+				 /* IMCR range 512–595 */
+				 <IMCRS_SIUL2_0 0 0x0 0x4009ca40 0x0 0x150>,
+				 /* IMCR range 603 - 695 */
+				 <IMCRS_SIUL2_1_0 0 0x0 0x4403cbac 0x0 0x174>,
+				 /* IMCR range 696 - 727 (EIRQs) */
+				 <IMCRS_SIUL2_1_EIRQS 0 0x0 0x4403cd20 0x0 0x80>,
+				 /* IMCR range 728 - 785 */
+				 <IMCRS_SIUL2_1_1 0 0x0 0x4403cda0 0x0 0xe8>,
+
+				 /* Output pads */
+				 <OPADS_SIUL2_0 0 0x0 0x4009d700 0x0 0x10>,
+				 <OPADS_SIUL2_1 0 0x0 0x4403d700 0x0 0x14>,
+
+				 /* Input pads */
+				 <IPADS_SIUL2_0 0 0x0 0x4009d740 0x0 0x10>,
+				 <IPADS_SIUL2_1 0 0x0 0x4403d740 0x0 0x14>,
+
+				/* EIRQs */
+				 <EIRQS_SIUL2_1 0 0x0 0x4403c010 0x0 0xb4>;
+
+			pinctrl: siul2-pinctrl@4009c240 {
+				compatible = "nxp,s32r45-siul2-pinctrl",
+					     "nxp,s32cc-siul2-pinctrl";
+				#pinctrl-cells = <2>;
+
+				reg = <MSCRS_SIUL2_0   0 0x0 0x198>,
+				      <MSCRS_SIUL2_1   0 0x0 0x80>,
+				      <IMCRS_SIUL2_0   0 0x0 0x150>,
+				      <IMCRS_SIUL2_1_0 0 0x0 0x174>,
+				      <IMCRS_SIUL2_1_1 0 0x0 0xe8>;
+
+				/* MSCR range */
+				nxp,pins = <0   101
+					    102 133
+				/* IMCR range */
+					    512 595
+					    603 695
+					    728 785>;
+				status = "okay";
+			};
+
+			gpio: siul2-gpio@4009d700 {
+				compatible = "nxp,s32cc-siul2-gpio";
+
+				reg = <OPADS_SIUL2_0       0 0x0 0x10>,
+				      <OPADS_SIUL2_1       0 0x0 0x14>,
+				      <IPADS_SIUL2_0       0 0x0 0x10>,
+				      <IPADS_SIUL2_1       0 0x0 0x14>,
+				      <EIRQS_SIUL2_1       0 0x0 0xb4>,
+				      <IMCRS_SIUL2_1_EIRQS 0 0x0 0x80>;
+				reg-names = "opads0", "opads1", "ipads0",
+					    "ipads1", "eirqs", "eirq-imcrs";
+
+				#gpio-cells = <2>;
+				gpio-controller;
+					/* GPIO 0-101 */
+				gpio-ranges = <&pinctrl 0 0 102>,
+					/* GPIO 102-133 */
+					      <&pinctrl 102 102 32>;
+				status = "okay";
+			};
+
+			siul2_0_nvram: siul2_0_nvram {
+				reg = <MIDR_SIUL2_0 0 0x0 0x10>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				compatible = "nxp,s32r-siul2_0-nvram";
+				status = "okay";
+				u-boot,dm-pre-reloc;
+
+				soc_letter: soc_letter@0 {
+					reg = <S32CC_SOC_LETTER S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+
+				part_no: part_no@4 {
+					reg = <S32CC_SOC_PART_NO S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+
+				soc_major: soc_major@8 {
+					reg = <S32CC_SOC_MAJOR S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+
+				soc_minor: soc_minor@c {
+					reg = <S32CC_SOC_MINOR S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+
+				core_max_freq: core_max_freq@10 {
+					reg = <S32CC_MAX_CORE_FREQ S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+
+				max_cpus_per_cluster: max_cpus_per_cluster@14 {
+					reg = <S32CC_MAX_A53_CORES_PER_CLUSTER
+					    S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+
+				a53_cores_mask: a53_cores_mask@18 {
+					reg = <S32CC_A53_CORES_MASK S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+
+				pcie_variant: pcie_variant@1c {
+					reg = <S32CC_OVERWRITE_PCIE_DEV_ID
+					    S32CC_CELL_SIZE>;
+				};
+
+			};
+
+			siul2_1_nvram {
+				reg = <MIDR_SIUL2_1 0 0x0 0x10>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				compatible = "nxp,s32r-siul2_1-nvram";
+				status = "okay";
+				u-boot,dm-pre-reloc;
+
+				serdes_presence: serdes_presence@100 {
+					reg = <S32CC_SERDES_PRESENCE S32CC_CELL_SIZE>;
+				};
+
+				lax_presence: lax_presence@104 {
+					reg = <S32CC_LAX_PRESENCE S32CC_CELL_SIZE>;
+				};
+
+				soc_subminor: soc_subminor@108 {
+					reg = <S32CC_SOC_SUBMINOR S32CC_CELL_SIZE>;
+					u-boot,dm-pre-reloc;
+				};
+			};
+		};
+
+		gmac1: ethernet@44010000 {
+			compatible = "nxp,s32cc-dwmac";
+			reg = <0x0 0x44010000 0x0 0x2000>, /* gmac IP */
+			      <0x0 0x4007ca00 0x0 0x4>;    /* S32 CTRL_STS reg */
+			dma-coherent;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-names = "macirq";
+			tx-fifo-depth = <20480>;
+			rx-fifo-depth = <20480>;
+			status = "disabled";
+			phy-names = "gmac_xpcs";
+			phys = <&serdes1 PHY_TYPE_XPCS 0 0>;
+			clocks = <&clks S32R45_SCMI_CLK_GMAC1_AXI>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_AXI>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_TX_SGMII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_TX_RGMII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_TX_RMII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_TX_MII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_RX_SGMII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_RX_RGMII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_RX_RMII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_RX_MII>,
+				 <&clks S32R45_SCMI_CLK_GMAC1_TS>;
+			clock-names = "stmmaceth", "pclk",
+				      "tx_sgmii", "tx_rgmii",
+				      "tx_rmii", "tx_mii",
+				      "rx_sgmii", "rx_rgmii",
+				      "rx_rmii", "rx_mii",
+				      "ptp_ref";
+
+			gmac1_mdio: mdio1 {
+				compatible = "snps,dwmac-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
+		mc_cgm2: mc_cgm2@440c0000 {
+			compatible = "nxp,s32cc-mc_cgm2";
+			reg = <0x0 0x440c0000 0x0 0x3000>;
+
+			assigned-clocks =
+				<&plat_clks S32R45_CLK_MC_CGM2_MUX0>,
+				<&plat_clks S32R45_CLK_MC_CGM2_MUX1>,
+				<&plat_clks S32R45_CLK_ACCEL3>,
+				<&plat_clks S32R45_CLK_ACCEL4>;
+			assigned-clock-parents =
+				<&plat_clks S32R45_CLK_ACCEL_PLL_PHI0>,
+				<&plat_clks S32R45_CLK_ARM_PLL_DFS4_2>;
+			assigned-clock-rates =
+				<0>,
+				<0>,
+				<600000000>,
+				<400000000>;
+		};
+	};
+};
+
+&pinctrl {
+	sd0_pins_default: sd0_default {
+		sd0_default_grp0 {
+			pinmux = <S32CC_PINMUX(46, FUNC1)>,
+				 <S32CC_PINMUX(56, FUNC1)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+			bias-pull-down;
+		};
+
+		sd0_default_grp1 {
+			pinmux = <S32CC_PINMUX(47, FUNC1)>,
+				 <S32CC_PINMUX(48, FUNC1)>,
+				 <S32CC_PINMUX(49, FUNC1)>,
+				 <S32CC_PINMUX(50, FUNC1)>,
+				 <S32CC_PINMUX(51, FUNC1)>,
+				 <S32CC_PINMUX(52, FUNC1)>,
+				 <S32CC_PINMUX(53, FUNC1)>,
+				 <S32CC_PINMUX(54, FUNC1)>,
+				 <S32CC_PINMUX(55, FUNC1)>;
+			output-enable;
+			input-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+			bias-pull-up;
+		};
+
+		sd0_default_grp2 {
+			pinmux = <S32CC_PINMUX(57, FUNC1)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+		};
+
+		sd0_default_grp3 {
+			pinmux = <S32CC_PINMUX(515, FUNC2)>,
+				 <S32CC_PINMUX(516, FUNC2)>,
+				 <S32CC_PINMUX(517, FUNC2)>,
+				 <S32CC_PINMUX(518, FUNC2)>,
+				 <S32CC_PINMUX(519, FUNC2)>,
+				 <S32CC_PINMUX(520, FUNC2)>,
+				 <S32CC_PINMUX(521, FUNC2)>,
+				 <S32CC_PINMUX(522, FUNC2)>,
+				 <S32CC_PINMUX(523, FUNC2)>;
+		};
+	};
+};
+
+&plat_clks {
+	assigned-clocks =
+			<&plat_clks S32GEN1_CLK_FXOSC>,
+			<&plat_clks S32GEN1_CLK_FIRC>,
+			<&plat_clks S32GEN1_CLK_SIRC>,
+			<&plat_clks S32GEN1_CLK_GMAC0_EXT_RX>,
+			<&plat_clks S32R45_CLK_SERDES1_LANE0_TX>,
+			<&plat_clks S32R45_CLK_SERDES1_LANE0_CDR>,
+			<&plat_clks S32GEN1_CLK_SERDES0_LANE0_TX>,
+			<&plat_clks S32GEN1_CLK_SERDES0_LANE0_CDR>,
+			<&plat_clks S32GEN1_CLK_SERDES_REF>;
+	assigned-clock-parents =
+			<&fxosc 0>,
+			<&firc 0>,
+			<&sirc 0>,
+			<&gmac0_ext_rx 0>,
+			<&serdes1_lane0_ext_tx 0>,
+			<&serdes1_lane0_ext_cdr 0>,
+			<&serdes0_lane0_ext_tx 0>,
+			<&serdes0_lane0_ext_cdr 0>;
+	assigned-clock-rates =
+			<0>, <0>, <0>, <0>,
+			<0>, <0>, <0>, <0>,
+			<100000000>;
+};
+
+&accelpll {
+	assigned-clocks =
+		<&plat_clks S32GEN1_CLK_ACCEL_PLL_MUX>,
+		<&plat_clks S32GEN1_CLK_ACCEL_PLL_VCO>,
+		<&plat_clks S32R45_CLK_ACCEL_PLL_PHI0>,
+		<&plat_clks S32GEN1_CLK_ARM_PLL_DFS4>;
+	assigned-clock-parents =
+		<&plat_clks S32GEN1_CLK_FXOSC>;
+	assigned-clock-rates =
+		<0>,
+		<1800000000>,
+		<600000000>,
+		<400000000>;
+};
+
+&ddr_errata {
+	memory-region = <&ddr_errata_reserved>;
+	status = "okay";
+};

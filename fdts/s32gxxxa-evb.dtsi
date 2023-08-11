@@ -1,0 +1,433 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR BSD-3-Clause)
+/*
+ * Copyright 2019-2023 NXP
+ */
+
+#include <dt-bindings/gpio/gpio.h>
+#include "s32g-nxp-flash-macronix.dtsi"
+
+/ {
+	aliases {
+		usb0 = &usbotg;
+	};
+
+	usbotg: usb@44064000 {
+		compatible = "fsl,imx27-usb";
+		reg = <0x0 0x44064000 0x0 0x200>;
+		clocks = <&clks S32G_SCMI_CLK_USB_MEM>,
+			   <&clks S32G_SCMI_CLK_USB_LOW>;
+		pinctrl-0 = <&usb_pins>;
+		pinctrl-names = "default";
+		phys = <&saf1508_phy>;
+		dr_mode = "host";
+	};
+
+	saf1508_phy: usb_phy@44064000 {
+		compatible = "nxp,saf1508bet";
+		reg = <0x0 0x44064000 0x0 0x200>;
+		#phy-cells = <0>;
+	};
+};
+
+&usdhc0 {
+	pinctrl-names = "default", "state_100mhz", "state_200mhz";
+	pinctrl-0 = <&sd0_pins_default>;
+	pinctrl-1 = <&sd0_pins_100mhz>;
+	pinctrl-2 = <&sd0_pins_200mhz>;
+	status = "okay";
+};
+
+&spi1 {
+	pinctrl-0 = <&dspi1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi5 {
+	pinctrl-0 = <&dspi5_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	ethernet-switch@0 {
+		compatible = "nxp,sja1105-s32gevb-fw-loader";
+		spi-max-frequency = <1000000>;
+		reg = <0>;
+		spi-cpha;
+	};
+};
+
+&gmac0 {
+	status = "okay";
+	phy-mode = "rgmii";
+	phy-handle = <&mdio_c_phy4>;
+};
+
+&usbotg {
+	status = "okay";
+};
+
+&gmac0_mdio {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	/* ARQ107 on S32RGV-VNP-PLAT */
+	mdio_c_phy1: ethernet-phy@1 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <1>;
+	};
+	/* KSZ9031RNX on S32G-VNP-PROC */
+	mdio_c_phy4: ethernet-phy@4 {
+		reg = <4>;
+		max-speed = <1000>;
+	};
+	/* KSZ9031RNX on S32RGV-VNP-PLAT */
+	mdio_c_phy5: ethernet-phy@5 {
+		status = "disabled"; /* blocked by USB by default */
+		reg = <5>;
+		max-speed = <1000>;
+	};
+};
+
+&pfe {
+	status = "okay";
+};
+
+/* EEPROM */
+&i2c0 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default", "gpio";
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-1 = <&i2c0_gpio_pins>;
+	scl-gpios = <&gpio 17 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpio 16 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	status = "okay";
+};
+
+/* Platform board PCI X16 EXPRESS - I2C_SCL_S0, I2C_SDA_S0  */
+&i2c1 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default", "gpio";
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-1 = <&i2c1_gpio_pins>;
+	scl-gpios = <&gpio 19 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpio 20 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	status = "okay";
+};
+
+/* Platform board GPIO_J3-17 (SDA), GPIO_J3-19 (SCL0)  */
+&i2c2 {
+	clock-frequency = <100000>;
+	pinctrl-names = "default", "gpio";
+	pinctrl-0 = <&i2c2_pins>;
+	pinctrl-1 = <&i2c2_gpio_pins>;
+	scl-gpios = <&gpio 21 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpio 22 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	status = "okay";
+};
+
+/* PMIC */
+&i2c4 {
+	status = "okay";
+	pinctrl-names = "default", "gpio";
+	pinctrl-0 = <&i2c4_pins>;
+	pinctrl-1 = <&i2c4_gpio_pins>;
+	scl-gpios = <&gpio 34 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	sda-gpios = <&gpio 33 (GPIO_ACTIVE_HIGH | GPIO_OPEN_DRAIN)>;
+	clock-frequency = <100000>;
+
+	vr5510@20 {
+		compatible = "nxp,vr5510";
+		reg = <0x20>;
+		status = "okay";
+	};
+
+	vr5510_fsu@21 {
+		compatible = "nxp,vr5510";
+		reg = <0x21>;
+		status = "okay";
+	};
+};
+
+&pinctrl {
+	u-boot,dm-pre-reloc;
+
+	i2c0_pins: i2c0 {
+		i2c0_grp0 {
+			pinmux = <S32CC_PINMUX(16, FUNC1)>,
+				 <S32CC_PINMUX(17, FUNC1)>;
+			drive-open-drain;
+			output-enable;
+			input-enable;
+			slew-rate = <S32CC_SLEW_133MHZ>;
+		};
+
+		i2c0_grp1 {
+			pinmux = <S32CC_PINMUX(565, FUNC2)>,
+				 <S32CC_PINMUX(566, FUNC2)>;
+		};
+
+	};
+
+	i2c0_gpio_pins: i2c0_gpio {
+		i2c0_gpio_grp0 {
+			pinmux = <S32CC_PINMUX(16, FUNC0)>,
+				 <S32CC_PINMUX(17, FUNC0)>;
+			drive-open-drain;
+			output-enable;
+			slew-rate = <S32CC_SLEW_208MHZ>;
+		};
+
+		i2c0_gpio_grp1 {
+			pinmux = <S32CC_PINMUX(565, FUNC0)>,
+				 <S32CC_PINMUX(566, FUNC0)>;
+		};
+
+	};
+
+	i2c1_pins: i2c1 {
+		i2c1_grp0 {
+			pinmux = <S32CC_PINMUX(19, FUNC1)>,
+				 <S32CC_PINMUX(20, FUNC1)>;
+			drive-open-drain;
+			output-enable;
+			input-enable;
+			slew-rate = <S32CC_SLEW_133MHZ>;
+		};
+
+		i2c1_grp1 {
+			pinmux = <S32CC_PINMUX(717, FUNC2)>,
+				 <S32CC_PINMUX(718, FUNC2)>;
+		};
+
+	};
+
+	i2c1_gpio_pins: i2c1_gpio {
+		i2c1_gpio_grp0 {
+			pinmux = <S32CC_PINMUX(19, FUNC0)>,
+				 <S32CC_PINMUX(20, FUNC0)>;
+			drive-open-drain;
+			output-enable;
+			slew-rate = <S32CC_SLEW_208MHZ>;
+		};
+
+		i2c1_gpio_grp1 {
+			pinmux = <S32CC_PINMUX(717, FUNC0)>,
+				 <S32CC_PINMUX(718, FUNC0)>;
+		};
+
+	};
+
+	i2c2_pins: i2c2 {
+		i2c2_grp0 {
+			pinmux = <S32CC_PINMUX(21, FUNC1)>,
+				 <S32CC_PINMUX(22, FUNC1)>;
+			drive-open-drain;
+			output-enable;
+			input-enable;
+			slew-rate = <S32CC_SLEW_133MHZ>;
+		};
+
+		i2c2_grp1 {
+			pinmux = <S32CC_PINMUX(719, FUNC2)>,
+				 <S32CC_PINMUX(720, FUNC2)>;
+		};
+
+	};
+
+	i2c2_gpio_pins: i2c2_gpio {
+		i2c2_gpio_grp0 {
+			pinmux = <S32CC_PINMUX(21, FUNC0)>,
+				 <S32CC_PINMUX(22, FUNC0)>;
+			drive-open-drain;
+			output-enable;
+			slew-rate = <S32CC_SLEW_208MHZ>;
+		};
+
+		i2c2_gpio_grp1 {
+			pinmux = <S32CC_PINMUX(719, FUNC0)>,
+				 <S32CC_PINMUX(720, FUNC0)>;
+		};
+
+	};
+
+	i2c4_pins: i2c4 {
+		i2c4_grp0 {
+			pinmux = <S32CC_PINMUX(33, FUNC1)>;
+			drive-open-drain;
+			output-enable;
+			input-enable;
+			slew-rate = <S32CC_SLEW_133MHZ>;
+		};
+
+		i2c4_grp1 {
+			pinmux = <S32CC_PINMUX(34, FUNC2)>;
+			drive-open-drain;
+			output-enable;
+			input-enable;
+			slew-rate = <S32CC_SLEW_133MHZ>;
+		};
+
+		i2c4_grp2 {
+			pinmux = <S32CC_PINMUX(724, FUNC3)>,
+				 <S32CC_PINMUX(723, FUNC3)>;
+		};
+
+	};
+
+	i2c4_gpio_pins: i2c4_gpio {
+		i2c4_gpio_grp0 {
+			pinmux = <S32CC_PINMUX(33, FUNC0)>,
+				 <S32CC_PINMUX(34, FUNC0)>;
+			drive-open-drain;
+			output-enable;
+			slew-rate = <S32CC_SLEW_208MHZ>;
+		};
+
+		i2c4_gpio_grp1 {
+			pinmux = <S32CC_PINMUX(724, FUNC0)>,
+				 <S32CC_PINMUX(723, FUNC0)>;
+		};
+
+	};
+
+	dspi1_pins: dspi1 {
+		dspi1_grp0 {
+			pinmux = <S32CC_PINMUX(6, FUNC2)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+		};
+
+		dspi1_grp1 {
+			pinmux = <S32CC_PINMUX(7, FUNC2)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+			bias-pull-up;
+		};
+
+		dspi1_grp2 {
+			pinmux = <S32CC_PINMUX(8, FUNC3)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+		};
+
+		dspi1_grp3 {
+			pinmux = <S32CC_PINMUX(95, FUNC0)>;
+			input-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+			bias-pull-up;
+		};
+
+		dspi1_grp4 {
+			pinmux = <S32CC_PINMUX(987, FUNC2)>;
+		};
+
+	};
+
+	dspi5_pins: dspi5 {
+		dspi5_grp0 {
+			pinmux = <S32CC_PINMUX(9, FUNC3)>,
+				 <S32CC_PINMUX(11, FUNC3)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+		};
+
+		dspi5_grp1 {
+			pinmux = <S32CC_PINMUX(10, FUNC0)>;
+			input-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+			bias-pull-up;
+		};
+
+		dspi5_grp2 {
+			pinmux = <S32CC_PINMUX(12, FUNC3)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_150MHZ>;
+			bias-pull-up;
+		};
+
+		dspi5_grp3 {
+			pinmux = <S32CC_PINMUX(1007, FUNC2)>;
+		};
+
+	};
+
+	usb_pins: usb {
+		usb_grp0 {
+			pinmux = <S32CC_PINMUX(62, FUNC1)>,
+				 <S32CC_PINMUX(63, FUNC1)>,
+				 <S32CC_PINMUX(64, FUNC1)>,
+				 <S32CC_PINMUX(65, FUNC1)>,
+				 <S32CC_PINMUX(112, FUNC1)>,
+				 <S32CC_PINMUX(188, FUNC1)>,
+				 <S32CC_PINMUX(189, FUNC1)>,
+				 <S32CC_PINMUX(190, FUNC1)>;
+			output-enable;
+			input-enable;
+			slew-rate = <S32CC_SLEW_208MHZ>;
+		};
+
+		usb_grp1 {
+			pinmux = <S32CC_PINMUX(184, FUNC0)>,
+				 <S32CC_PINMUX(185, FUNC0)>,
+				 <S32CC_PINMUX(187, FUNC0)>;
+			input-enable;
+			slew-rate = <S32CC_SLEW_208MHZ>;
+		};
+
+		usb_grp2 {
+			pinmux = <S32CC_PINMUX(186, FUNC1)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_208MHZ>;
+		};
+
+		usb_grp3 {
+			pinmux = <S32CC_PINMUX(895, FUNC2)>,
+				 <S32CC_PINMUX(896, FUNC2)>,
+				 <S32CC_PINMUX(897, FUNC2)>,
+				 <S32CC_PINMUX(898, FUNC2)>,
+				 <S32CC_PINMUX(899, FUNC2)>,
+				 <S32CC_PINMUX(900, FUNC2)>,
+				 <S32CC_PINMUX(901, FUNC2)>,
+				 <S32CC_PINMUX(902, FUNC2)>,
+				 <S32CC_PINMUX(903, FUNC2)>,
+				 <S32CC_PINMUX(904, FUNC2)>,
+				 <S32CC_PINMUX(905, FUNC2)>;
+		};
+
+	};
+
+	uart0_pins: uart0 {
+		uart0_grp0 {
+			pinmux = <S32CC_PINMUX(41, FUNC1)>;
+			output-enable;
+			slew-rate = <S32CC_SLEW_133MHZ>;
+		};
+
+		uart0_grp1 {
+			pinmux = <S32CC_PINMUX(42, FUNC0)>;
+			input-enable;
+			slew-rate = <S32CC_SLEW_133MHZ>;
+		};
+
+		uart0_pins_grp2 {
+			pinmux = <S32CC_PINMUX(512, FUNC2)>;
+		};
+	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pfe_mac0_rmii {
+	clock-frequency = <50000000>;
+};
+
+&pfe_mac1_rmii {
+	clock-frequency = <50000000>;
+};
+
+&pfe_mac2_rmii {
+	clock-frequency = <50000000>;
+};

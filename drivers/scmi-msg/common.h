@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2015-2019, Arm Limited and Contributors. All rights reserved.
  * Copyright (c) 2019-2020, Linaro Limited
+ * Copyright 2022 NXP
  */
 #ifndef SCMI_MSG_COMMON_H
 #define SCMI_MSG_COMMON_H
@@ -13,7 +14,7 @@
 
 #include "base.h"
 #include "clock.h"
-#include "power_domain.h"
+#include "perf.h"
 #include "reset_domain.h"
 
 #define SCMI_VERSION			0x20000U
@@ -105,18 +106,18 @@ scmi_msg_handler_t scmi_msg_get_base_handler(struct scmi_msg *msg);
 scmi_msg_handler_t scmi_msg_get_clock_handler(struct scmi_msg *msg);
 
 /*
+ * scmi_msg_get_perf_handler - Return a handler for a performance domain message
+ * @msg - message to process
+ * Return a function handler for the message or NULL
+ */
+scmi_msg_handler_t scmi_msg_get_perf_handler(struct scmi_msg *msg);
+
+/*
  * scmi_msg_get_rstd_handler - Return a handler for a reset domain message
  * @msg - message to process
  * Return a function handler for the message or NULL
  */
 scmi_msg_handler_t scmi_msg_get_rstd_handler(struct scmi_msg *msg);
-
-/*
- * scmi_msg_get_pd_handler - Return a handler for a power domain message
- * @msg - message to process
- * Return a function handler for the message or NULL
- */
-scmi_msg_handler_t scmi_msg_get_pd_handler(struct scmi_msg *msg);
 
 /*
  * Process Read, process and write response for input SCMI message

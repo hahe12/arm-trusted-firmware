@@ -2,6 +2,7 @@
 /*
  * Copyright (c) 2015-2019, Arm Limited and Contributors. All rights reserved.
  * Copyright (c) 2019, Linaro Limited
+ * Copyright 2020, 2022 NXP
  */
 
 #ifndef SCMI_MSG_H
@@ -17,12 +18,15 @@
 /* A channel abstract a communication path between agent and server */
 struct scmi_msg_channel;
 
+/* Performance level */
+struct scmi_perf_level;
+
 /*
  * struct scmi_msg_channel - Shared memory buffer for a agent-to-server channel
  *
  * @shm_addr: Address of the shared memory for the SCMI channel
  * @shm_size: Byte size of the shared memory for the SCMI channel
- * @busy: True when channel is busy, false when channel is free
+ * @busy: True when channel is busy, flase when channel is free
  * @agent_name: Agent name, SCMI protocol exposes 16 bytes max, or NULL
  */
 struct scmi_msg_channel {
@@ -81,6 +85,14 @@ size_t plat_scmi_protocol_count(void);
  * Return a pointer to a null terminated array supported protocol IDs.
  */
 const uint8_t *plat_scmi_protocol_list(unsigned int agent_id);
+
+/*
+ * Reset platform resource settings that were previously configured by an agent
+ *
+ * @agent_id: SCMI agent ID
+ * Return an SCMI compliant error code
+ */
+int32_t plat_scmi_reset_agent(unsigned int agent_id);
 
 /* Get the name of the SCMI vendor for the platform */
 const char *plat_scmi_vendor_name(void);
@@ -166,6 +178,40 @@ int32_t plat_scmi_clock_get_state(unsigned int agent_id, unsigned int scmi_id);
  */
 int32_t plat_scmi_clock_set_state(unsigned int agent_id, unsigned int scmi_id,
 				  bool enable_not_disable);
+
+/* Handlers for SCMI Performance Domain protocol services */
+
+/*
+ * Return number of performance domains for the agent
+ * @agent_id: SCMI agent ID
+ * Return number of performance domains
+ */
+size_t plat_scmi_perf_domain_count(unsigned int agent_id);
+
+/*
+ * Get performance domain string ID (aka name)
+ * @agent_id: SCMI agent ID
+ * @domain_id: SCMI performance domain ID
+ * Return pointer to name or NULL
+ */
+const char *plat_scmi_perf_get_name(unsigned int agent_id,
+				  unsigned int domain_id);
+
+/*
+ * Get possible performance levels as an array
+ *
+ * @agent_id: SCMI agent ID
+ * @domain_id: SCMI performance domain ID
+ * @lvl_index: index in the @levels array representing performance
+ * levels of interest
+ * @levels: performance levels array
+ * @num_levels: Array size of @levels.
+ * Return an SCMI compliant error code
+ */
+int32_t plat_scmi_perf_describe_levels(unsigned int agent_id,
+				    unsigned int domain_id, size_t lvl_index,
+				    struct scmi_perf_level *levels,
+				    size_t *num_levels);
 
 /* Handlers for SCMI Reset Domain protocol services */
 
